@@ -1,9 +1,12 @@
-import Image from "next/image";
-
-export default function Home() {
+export default function Dashboard() {
   return (
-    <main className="min-h-screen">
-      <h1 className="text-2xl font-bold">Meu Projeto</h1>
+    <main className="container mx-auto p-4 space-y-8">
+      <header className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Dashboard de Passageiros</h1>
+      </header>
+      
+      {/* MetricsGrid será adicionado aqui */}
+      {/* PassengersTable será adicionado aqui */}
     </main>
   );
 }
