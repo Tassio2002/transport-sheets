@@ -1,43 +1,57 @@
+'use client'
+
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
-import { Passageiro } from "../../app/types/index";
-import { MoreHorizontal, Pencil, Trash } from "lucide-react";
-import { Button } from "../ui/button";
+} from "../ui/dropdown-menu"
+import { Passageiro } from "../../app/types/index"
+import { MoreHorizontal, Pencil, Trash } from "lucide-react"
+import { Button } from "../ui/button"
+import { useState } from "react"
+import PassengerForm from "./PassengerForm"
 
 interface PassengerActionsProps {
-  passenger: Passageiro;
+  passenger: Passageiro
+  onEdit: (data: Partial<Passageiro>) => void
+  onDelete: (id: string) => void
 }
 
-const PassengerActions = ({ passenger }: PassengerActionsProps) => {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-8 w-8 p-0">
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem
-          onClick={() => console.log("Editar", passenger.id)}
-          className="cursor-pointer"
-        >
-          <Pencil className="mr-2 h-4 w-4" />
-          Editar
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => console.log("Excluir", passenger.id)}
-          className="cursor-pointer text-red-600"
-        >
-          <Trash className="mr-2 h-4 w-4" />
-          Excluir
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-};
+const PassengerActions = ({ passenger, onEdit, onDelete }: PassengerActionsProps) => {
+  const [isEditing, setIsEditing] = useState(false)
 
-export default PassengerActions; 
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="h-8 w-8 p-0">
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => setIsEditing(true)} className="cursor-pointer">
+            <Pencil className="mr-2 h-4 w-4" />
+            Editar
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => onDelete(passenger.id)}
+            className="cursor-pointer text-red-600"
+          >
+            <Trash className="mr-2 h-4 w-4" />
+            Excluir
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <PassengerForm
+        passenger={passenger}
+        open={isEditing}
+        onOpenChange={setIsEditing}
+        onSubmit={onEdit}
+      />
+    </>
+  )
+}
+
+export default PassengerActions 
