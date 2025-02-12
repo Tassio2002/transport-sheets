@@ -1,8 +1,16 @@
-import MetricsGrid from "../components/metrics/MetricsGrid";
-import PassengersTable from "../components/passengers/PassengersTable";
-import { mockMetricas, mockPassageiros } from "../app/lib/mock-data";
+'use client'
+
+import { usePassengers } from '../hooks/usePassengers'
+import PassengersTable from '../components/passengers/PassengersTable'
+import MetricsGrid from '../components/metrics/MetricsGrid'
+import { calculateMetrics } from '../app/lib/utils'
 
 export default function Dashboard() {
+  const { passengers, loading, error } = usePassengers()
+
+  if (loading) return <div>Carregando...</div>
+  if (error) return <div>Erro: {error}</div>
+
   return (
     <main className="container mx-auto p-4 space-y-8">
       <header className="flex flex-col gap-1">
@@ -12,12 +20,8 @@ export default function Dashboard() {
         </p>
       </header>
 
-      <MetricsGrid metrics={mockMetricas} />
-      
-      <div className="rounded-lg border bg-card p-6">
-        <h2 className="text-lg font-semibold mb-4">Lista de Passageiros</h2>
-        <PassengersTable passengers={mockPassageiros} />
-      </div>
+      <MetricsGrid metrics={calculateMetrics(passengers)} />
+      <PassengersTable passengers={passengers} />
     </main>
-  );
+  )
 }
