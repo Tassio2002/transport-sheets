@@ -12,10 +12,12 @@ import { Passageiro } from "../../app/types/index";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import PassengersToolbar from "./PassengersToolbar";
 import StatusBadge from "./StatusBadge";
 import PassengerActions from "./PassengerActions";
 import PaginationControls from "./PaginationControls";
+import { Button } from "../ui/button";
 
 interface PassengersTableProps {
   passengers: Passageiro[];
@@ -27,6 +29,7 @@ const PassengersTable = ({ passengers: initialPassengers }: PassengersTableProps
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [passengers, setPassengers] = useState(initialPassengers);
+  const [showCpfRg, setShowCpfRg] = useState(true);
 
   const filteredPassengers = passengers.filter((passenger) => {
     const matchesSearch = passenger.nome.toLowerCase().includes(searchTerm.toLowerCase());
@@ -59,6 +62,10 @@ const PassengersTable = ({ passengers: initialPassengers }: PassengersTableProps
     // Aqui você chamaria a API para deletar o passageiro
   };
 
+  const maskCpfRg = (cpfRg: string) => {
+    return cpfRg.replace(/[0-9]/g, "*");
+  };
+
   return (
     <div className="space-y-4">
       <PassengersToolbar 
@@ -72,7 +79,23 @@ const PassengersTable = ({ passengers: initialPassengers }: PassengersTableProps
             <TableRow>
               <TableHead>Nome</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>CPF/RG</TableHead>
+              <TableHead>
+                <div className="flex items-center gap-2">
+                  CPF/RG
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowCpfRg(!showCpfRg)}
+                    className="h-6 w-6"
+                  >
+                    {showCpfRg ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </TableHead>
               <TableHead>Telefone</TableHead>
               <TableHead>Data Pagamento</TableHead>
               <TableHead className="text-right">Ações</TableHead>
@@ -85,7 +108,9 @@ const PassengersTable = ({ passengers: initialPassengers }: PassengersTableProps
                 <TableCell>
                   <StatusBadge status={passenger.status} />
                 </TableCell>
-                <TableCell>{passenger.cpfRg}</TableCell>
+                <TableCell>
+                  {showCpfRg ? passenger.cpfRg : maskCpfRg(passenger.cpfRg)}
+                </TableCell>
                 <TableCell>{passenger.telefone}</TableCell>
                 <TableCell>
                   {passenger.dataPagamento
