@@ -1,10 +1,11 @@
 import { GoogleSheetsService } from '../../../lib/google-sheets'
 import { NextResponse } from 'next/server'
 
+const sheetsService = new GoogleSheetsService()
+
 export async function GET() {
   try {
-    const service = new GoogleSheetsService()
-    const passengers = await service.getPassageiros()
+    const passengers = await sheetsService.getPassageiros()
     return NextResponse.json(passengers)
   } catch (error) {
     return NextResponse.json(
@@ -12,4 +13,17 @@ export async function GET() {
       { status: 500 }
     )
   }
-} 
+}
+
+export async function POST(request: Request) {
+  try {
+    const data = await request.json()
+    const newPassenger = await sheetsService.addPassageiro(data)
+    return NextResponse.json(newPassenger)
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Falha ao adicionar passageiro' },
+      { status: 500 }
+    )
+  }
+}
