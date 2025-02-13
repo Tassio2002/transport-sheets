@@ -65,7 +65,12 @@ export class GoogleSheetsService {
     }
 
     const range = `${this.sheetName}!A${rowIndex + 2}:F${rowIndex + 2}`
-    const updatedPassageiro = { ...passageiros[rowIndex], ...data }
+    const updatedPassageiro = { 
+      ...passageiros[rowIndex], 
+      ...data,
+      // Garante que a data seja um objeto Date
+      dataPagamento: data.dataPagamento ? new Date(data.dataPagamento) : passageiros[rowIndex].dataPagamento
+    }
     
     await this.sheets.spreadsheets.values.update({
       spreadsheetId: this.spreadsheetId,
@@ -80,28 +85,38 @@ export class GoogleSheetsService {
   }
 
   async deletePassageiro(id: string) {
-    const passageiros = await this.getPassageiros()
-    const rowIndex = passageiros.findIndex(p => p.id === id)
-    
-    if (rowIndex === -1) {
-      throw new Error('Passageiro não encontrado')
-    }
+    try {
+      // 1. Buscar todos os passageiros
+      const passageiros = await this.getPassageiros()
+      
+      // 2. Filtrar o passageiro a ser deletado
+      const remainingPassageiros = passageiros.filter(p => p.id !== id)
+      
+      // 3. Limpar toda a área de dados
+      const clearRange = `${this.sheetName}!A2:F1000` // Ajuste o range conforme necessário
+      await this.sheets.spreadsheets.values.clear({
+        spreadsheetId: this.spreadsheetId,
+        range: clearRange,
+      })
 
-    await this.sheets.spreadsheets.batchUpdate({
-      spreadsheetId: this.spreadsheetId,
-      requestBody: {
-        requests: [{
-          deleteDimension: {
-            range: {
-              sheetId: 0, // Você precisará obter o sheetId correto
-              dimension: 'ROWS',
-              startIndex: rowIndex + 1,
-              endIndex: rowIndex + 2,
-            },
+      // 4. Reescrever apenas os dados válidos
+      if (remainingPassageiros.length > 0) {
+        const range = `${this.sheetName}!A2:F${remainingPassageiros.length + 1}`
+        await this.sheets.spreadsheets.values.update({
+          spreadsheetId: this.spreadsheetId,
+          range,
+          valueInputOption: 'RAW',
+          requestBody: {
+            values: remainingPassageiros.map(p => this.passageiroToRow(p))
           },
-        }],
-      },
-    })
+        })
+      }
+
+      return true
+    } catch (error) {
+      console.error('Erro ao deletar passageiro:', error)
+      throw error
+    }
   }
 
   async addPassageiro(data: Omit<Passageiro, 'id'>): Promise<Passageiro> {
@@ -122,14 +137,16 @@ export class GoogleSheetsService {
   }
 
   private parsePassageiros(values: any[]): Passageiro[] {
-    return values.map(row => ({
-      id: row[0],
-      nome: row[1],
-      status: row[2],
-      cpfRg: row[3],
-      telefone: row[4],
-      dataPagamento: row[5] ? new Date(row[5]) : undefined,
-    }))
+    return values
+      .filter(row => row && row[1] && row[1].trim() !== '') // Filtra linhas vazias
+      .map(row => ({
+        id: row[0],
+        nome: row[1],
+        status: row[2],
+        cpfRg: row[3],
+        telefone: row[4],
+        dataPagamento: row[5] ? new Date(row[5]) : null,
+      }))
   }
 
   private passageiroToRow(passageiro: Passageiro): any[] {
@@ -139,7 +156,12 @@ export class GoogleSheetsService {
       passageiro.status,
       passageiro.cpfRg,
       passageiro.telefone,
-      passageiro.dataPagamento ? passageiro.dataPagamento.toISOString() : '',
+      // Verifica se dataPagamento é uma string de data ou objeto Date
+      passageiro.dataPagamento 
+        ? (passageiro.dataPagamento instanceof Date 
+            ? passageiro.dataPagamento.toISOString() 
+            : new Date(passageiro.dataPagamento).toISOString())
+        : '',
     ]
   }
 

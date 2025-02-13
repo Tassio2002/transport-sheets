@@ -29,9 +29,32 @@ export const usePassengers = () => {
     }
   }
 
-  useEffect(() => {
-    fetchPassengers()
-  }, [])
+  const addPassenger = async (data: Omit<Passageiro, 'id'>) => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/passengers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) throw new Error('Falha ao adicionar')
+
+      await fetchPassengers()
+      toast({
+        title: "Sucesso",
+        description: "Passageiro adicionado com sucesso",
+      })
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível adicionar o passageiro",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const updatePassenger = async (id: string, data: Partial<Passageiro>) => {
     try {
@@ -44,7 +67,7 @@ export const usePassengers = () => {
 
       if (!response.ok) throw new Error('Falha ao atualizar')
 
-      await fetchPassengers() // Recarrega a lista
+      await fetchPassengers()
       toast({
         title: "Sucesso",
         description: "Passageiro atualizado com sucesso",
@@ -69,7 +92,7 @@ export const usePassengers = () => {
 
       if (!response.ok) throw new Error('Falha ao deletar')
 
-      await fetchPassengers() // Recarrega a lista
+      await fetchPassengers()
       toast({
         title: "Sucesso",
         description: "Passageiro removido com sucesso",
@@ -85,10 +108,14 @@ export const usePassengers = () => {
     }
   }
 
+  useEffect(() => {
+    fetchPassengers()
+  }, [])
+
   return {
     passengers,
     loading,
-    fetchPassengers,
+    addPassenger,
     updatePassenger,
     deletePassenger,
   }
