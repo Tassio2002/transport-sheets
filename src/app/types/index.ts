@@ -4,7 +4,7 @@ export interface Passageiro {
     status: 'NOME CONFIRMADO' | 'PAGO' | 'PENDENTE';
     cpfRg: string;
     telefone: string;
-    dataPagamento?: Date;
+    dataPagamento?: Date | null;
 }
 
 export interface Metricas {

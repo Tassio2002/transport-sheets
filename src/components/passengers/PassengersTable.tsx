@@ -38,7 +38,9 @@ const PassengersTable = ({
   const [pageSize, setPageSize] = useState(10)
   const [showCpfRg, setShowCpfRg] = useState(true)
 
-  const filteredPassengers = passengers.filter((passenger) => {
+  const validPassengers = passengers.filter(p => p.nome && p.nome.trim() !== '')
+
+  const filteredPassengers = validPassengers.filter((passenger) => {
     const matchesSearch = passenger.nome.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === "TODOS" || passenger.status === statusFilter
     return matchesSearch && matchesStatus
@@ -57,12 +59,12 @@ const PassengersTable = ({
     setCurrentPage(1) // Reset to first page when changing page size
   }
 
-  const handleEdit = (data: Partial<Passageiro>) => {
-    // Aqui você chamaria a API para atualizar os dados
+  const handleEdit = async (id: string, data: Partial<Passageiro>) => {
+    await onUpdate(id, data)
   }
 
-  const handleDelete = (id: string) => {
-    // Aqui você chamaria a API para deletar o passageiro
+  const handleDelete = async (id: string) => {
+    await onDelete(id)
   }
 
   const maskCpfRg = (cpfRg: string) => {
@@ -77,7 +79,7 @@ const PassengersTable = ({
     )
   }
 
-  if (!passengers || passengers.length === 0) {
+  if (!validPassengers || validPassengers.length === 0) {
     return (
       <div className="text-center py-8">
         Nenhum passageiro encontrado
