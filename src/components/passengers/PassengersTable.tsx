@@ -12,7 +12,7 @@ import { Passageiro } from "../../app/types/index";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import PassengersToolbar from "./PassengersToolbar";
 import StatusBadge from "./StatusBadge";
 import PassengerActions from "./PassengerActions";
@@ -20,51 +20,70 @@ import PaginationControls from "./PaginationControls";
 import { Button } from "../ui/button";
 
 interface PassengersTableProps {
-  passengers: Passageiro[];
+  passengers: Passageiro[]
+  loading: boolean
+  onUpdate: (id: string, data: Partial<Passageiro>) => Promise<void>
+  onDelete: (id: string) => Promise<void>
 }
 
-const PassengersTable = ({ passengers: initialPassengers }: PassengersTableProps) => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<Passageiro['status'] | 'TODOS'>("TODOS");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [passengers, setPassengers] = useState(initialPassengers);
-  const [showCpfRg, setShowCpfRg] = useState(true);
+const PassengersTable = ({ 
+  passengers, 
+  loading, 
+  onUpdate, 
+  onDelete 
+}: PassengersTableProps) => {
+  const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState<Passageiro['status'] | 'TODOS'>("TODOS")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [showCpfRg, setShowCpfRg] = useState(true)
 
   const filteredPassengers = passengers.filter((passenger) => {
-    const matchesSearch = passenger.nome.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "TODOS" || passenger.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+    const matchesSearch = passenger.nome.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesStatus = statusFilter === "TODOS" || passenger.status === statusFilter
+    return matchesSearch && matchesStatus
+  })
 
-  const totalPages = Math.ceil(filteredPassengers.length / pageSize);
-  const startIndex = (currentPage - 1) * pageSize;
-  const paginatedPassengers = filteredPassengers.slice(startIndex, startIndex + pageSize);
+  const totalPages = Math.ceil(filteredPassengers.length / pageSize)
+  const startIndex = (currentPage - 1) * pageSize
+  const paginatedPassengers = filteredPassengers.slice(startIndex, startIndex + pageSize)
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
+    setCurrentPage(page)
+  }
 
   const handlePageSizeChange = (size: number) => {
-    setPageSize(size);
-    setCurrentPage(1); // Reset to first page when changing page size
-  };
+    setPageSize(size)
+    setCurrentPage(1) // Reset to first page when changing page size
+  }
 
   const handleEdit = (data: Partial<Passageiro>) => {
-    setPassengers(passengers.map(p => 
-      p.id === data.id ? { ...p, ...data } : p
-    ));
     // Aqui você chamaria a API para atualizar os dados
-  };
+  }
 
   const handleDelete = (id: string) => {
-    setPassengers(passengers.filter(p => p.id !== id));
     // Aqui você chamaria a API para deletar o passageiro
-  };
+  }
 
   const maskCpfRg = (cpfRg: string) => {
-    return cpfRg.replace(/[0-9]/g, "*");
-  };
+    return cpfRg.replace(/[0-9]/g, "*")
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
+  }
+
+  if (!passengers || passengers.length === 0) {
+    return (
+      <div className="text-center py-8">
+        Nenhum passageiro encontrado
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">
@@ -102,32 +121,34 @@ const PassengersTable = ({ passengers: initialPassengers }: PassengersTableProps
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedPassengers.map((passenger) => (
-              <TableRow key={passenger.id}>
-                <TableCell className="font-medium">{passenger.nome}</TableCell>
-                <TableCell>
-                  <StatusBadge status={passenger.status} />
-                </TableCell>
-                <TableCell>
-                  {showCpfRg ? passenger.cpfRg : maskCpfRg(passenger.cpfRg)}
-                </TableCell>
-                <TableCell>{passenger.telefone}</TableCell>
-                <TableCell>
-                  {passenger.dataPagamento
-                    ? format(passenger.dataPagamento, "dd/MM/yyyy", {
-                        locale: ptBR,
-                      })
-                    : "-"}
-                </TableCell>
-                <TableCell className="text-right">
-                  <PassengerActions
-                    passenger={passenger}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
+            {paginatedPassengers.map((passenger) => {
+              return (
+                <TableRow key={passenger.id}>
+                  <TableCell className="font-medium">{passenger.nome}</TableCell>
+                  <TableCell>
+                    <StatusBadge status={passenger.status} />
+                  </TableCell>
+                  <TableCell>
+                    {showCpfRg ? passenger.cpfRg : maskCpfRg(passenger.cpfRg)}
+                  </TableCell>
+                  <TableCell>{passenger.telefone}</TableCell>
+                  <TableCell>
+                    {passenger.dataPagamento
+                      ? format(new Date(passenger.dataPagamento), "dd/MM/yyyy", {
+                          locale: ptBR,
+                        })
+                      : "-"}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <PassengerActions
+                      passenger={passenger}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                    />
+                  </TableCell>
+                </TableRow>
+              )
+            })}
           </TableBody>
         </Table>
       </div>
@@ -140,7 +161,7 @@ const PassengersTable = ({ passengers: initialPassengers }: PassengersTableProps
         onPageSizeChange={handlePageSizeChange}
       />
     </div>
-  );
-};
+  )
+}
 
-export default PassengersTable; 
+export default PassengersTable 

@@ -7,31 +7,53 @@ export class GoogleSheetsService {
   private sheetName: string
 
   constructor() {
-    const credentials = {
-      private_key: process.env.GOOGLE_SHEETS_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      client_email: process.env.GOOGLE_SHEETS_CLIENT_EMAIL,
+    try {
+      console.log('Iniciando GoogleSheetsService...')
+      const credentials = {
+        private_key: process.env.GOOGLE_SHEETS_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        client_email: process.env.GOOGLE_SHEETS_CLIENT_EMAIL,
+      }
+
+      console.log('Credenciais carregadas:', {
+        hasPrivateKey: !!credentials.private_key,
+        clientEmail: credentials.client_email,
+        spreadsheetId: process.env.SPREADSHEET_ID,
+        sheetName: process.env.SHEET_NAME
+      })
+
+      const auth = new google.auth.JWT(
+        credentials.client_email,
+        undefined,
+        credentials.private_key,
+        ['https://www.googleapis.com/auth/spreadsheets']
+      )
+
+      this.sheets = google.sheets({ version: 'v4', auth })
+      this.spreadsheetId = process.env.SPREADSHEET_ID!
+      this.sheetName = process.env.SHEET_NAME!
+      
+      console.log('GoogleSheetsService inicializado com sucesso')
+    } catch (error) {
+      console.error('Erro ao inicializar GoogleSheetsService:', error)
+      throw error
     }
-
-    const auth = new google.auth.JWT(
-      credentials.client_email,
-      undefined,
-      credentials.private_key,
-      ['https://www.googleapis.com/auth/spreadsheets']
-    )
-
-    this.sheets = google.sheets({ version: 'v4', auth })
-    this.spreadsheetId = process.env.SPREADSHEET_ID!
-    this.sheetName = process.env.SHEET_NAME!
   }
 
   async getPassageiros(): Promise<Passageiro[]> {
-    const range = `${this.sheetName}!A2:F`
-    const response = await this.sheets.spreadsheets.values.get({
-      spreadsheetId: this.spreadsheetId,
-      range,
-    })
+    try {
+      // Ajustando o range para ler todas as linhas
+      const range = `${this.sheetName}!A2:F`
+      const response = await this.sheets.spreadsheets.values.get({
+        spreadsheetId: this.spreadsheetId,
+        range,
+      })
 
-    return this.parsePassageiros(response.data.values || [])
+      console.log('Dados recebidos:', response.data)
+      return this.parsePassageiros(response.data.values || [])
+    } catch (error) {
+      console.error('Erro ao buscar dados:', error)
+      throw error
+    }
   }
 
   async updatePassageiro(id: string, data: Partial<Passageiro>) {
