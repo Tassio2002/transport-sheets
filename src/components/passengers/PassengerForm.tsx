@@ -1,5 +1,15 @@
 'use client'
 
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../ui/form"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "../ui/button"
 import { Calendar } from "../ui/calendar"
 import {
@@ -27,12 +37,13 @@ import { ptBR } from "date-fns/locale"
 import { CalendarIcon } from "lucide-react"
 import { useState } from "react"
 import { cn } from "../../app/lib/utils"
+import { PassengerFormData, passengerSchema } from "@components/lib/schemas"
 
 interface PassengerFormProps {
   passenger: Passageiro | null
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (data: Omit<Passageiro, 'id'>) => Promise<void>
+  onSubmit: (data: Partial<Passageiro>) => void
 }
 
 const PassengerForm = ({
@@ -41,28 +52,21 @@ const PassengerForm = ({
   onOpenChange,
   onSubmit,
 }: PassengerFormProps) => {
-  const [formData, setFormData] = useState<Partial<Passageiro>>(
-    passenger || {
+  const form = useForm<PassengerFormData>({
+    resolver: zodResolver(passengerSchema),
+    defaultValues: passenger || {
       nome: "",
       status: "PENDENTE",
       cpfRg: "",
       telefone: "",
-      dataPagamento: undefined,
-    }
-  )
+      dataPagamento: null,
+    },
+  })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (formData.nome && formData.status && formData.cpfRg && formData.telefone) {
-      await onSubmit({
-        nome: formData.nome,
-        status: formData.status,
-        cpfRg: formData.cpfRg,
-        telefone: formData.telefone,
-        dataPagamento: formData.dataPagamento
-      })
-      onOpenChange(false)
-    }
+  const handleSubmit = (data: PassengerFormData) => {
+    onSubmit(data)
+    onOpenChange(false)
+    form.reset()
   }
 
   return (
@@ -73,119 +77,135 @@ const PassengerForm = ({
             {passenger ? "Editar Passageiro" : "Novo Passageiro"}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <label htmlFor="nome" className="text-sm font-medium">
-              Nome
-            </label>
-            <Input
-              id="nome"
-              value={formData.nome || ""}
-              onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-              required
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <FormField  
+              control={form.control}
+              name="nome"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="space-y-2">
-            <label htmlFor="status" className="text-sm font-medium">
-              Status
-            </label>
-            <Select
-              value={formData.status}
-              onValueChange={(value: Passageiro["status"]) =>
-                setFormData({ ...formData, status: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="PAGO">Pago</SelectItem>
-                <SelectItem value="NOME CONFIRMADO">Nome Confirmado</SelectItem>
-                <SelectItem value="PENDENTE">Pendente</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="cpfRg" className="text-sm font-medium">
-              CPF/RG
-            </label>
-            <Input
-              id="cpfRg"
-              value={formData.cpfRg || ""}
-              onChange={(e) => setFormData({ ...formData, cpfRg: e.target.value })}
-              required
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="PAGO">Pago</SelectItem>
+                      <SelectItem value="NOME CONFIRMADO">
+                        Nome Confirmado
+                      </SelectItem>
+                      <SelectItem value="PENDENTE">Pendente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="space-y-2">
-            <label htmlFor="telefone" className="text-sm font-medium">
-              Telefone
-            </label>
-            <Input
-              id="telefone"
-              value={formData.telefone || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, telefone: e.target.value })
-              }
-              required
+            <FormField
+              control={form.control}
+              name="cpfRg"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>CPF/RG</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Data de Pagamento</label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !formData.dataPagamento && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.dataPagamento ? (
-                    format(new Date(formData.dataPagamento), "dd/MM/yyyy", {
-                      locale: ptBR,
-                    })
-                  ) : (
-                    <span>Selecione uma data</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={
-                    formData.dataPagamento
-                      ? new Date(formData.dataPagamento)
-                      : undefined
-                  }
-                  onSelect={(date) =>
-                    setFormData({ ...formData, dataPagamento: date })
-                  }
-                  initialFocus
-                  locale={ptBR}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+            <FormField
+              control={form.control}
+              name="telefone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Telefone</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit">Salvar</Button>
-          </div>
-        </form>
+            <FormField
+              control={form.control}
+              name="dataPagamento"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Data de Pagamento</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {field.value ? (
+                            format(field.value, "dd/MM/yyyy", {
+                              locale: ptBR,
+                            })
+                          ) : (
+                            <span>Selecione uma data</span>
+                          )}
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={field.value || undefined}
+                        onSelect={field.onChange}
+                        initialFocus
+                        locale={ptBR}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit">Salvar</Button>
+            </div>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   )
 }
 
-export default PassengerForm 
+export default PassengerForm
